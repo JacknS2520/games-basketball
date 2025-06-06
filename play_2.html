@@ -4,11 +4,31 @@
         <title>Basketball - 2 Player</title>
         <script>
             function character() {
-                
+                const canvas = document.getElementById('canvas');
+                const player1 = canvas.getContext('2d');
+                const player2 = canvas.getContext('2d');
+
+                // create players
+                player1.beginPath();
+                player1.arc(100, 100, 20, 0, Math.PI * 2);
+                player1.fillStyle = 'blue';
+                player1.fill();
+                player1.closePath();
+                const player1team = 'blue';
+
+                player2.beginPath();
+                player2.arc(200, 100, 20, 0, Math.PI * 2);
+                player2.fillStyle = 'red';
+                player2.fill();
+                player2.closePath();
+                const player2team = 'red';
+
+                // move players
+
             }
         </script>
     </head>
     <body>
-
+        <canvas id="canvas" width="100%" height="100%" style="background-image: url('Basketball Court(game).png');"></canvas>
     </body>
 </html>
