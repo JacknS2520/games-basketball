@@ -3,36 +3,75 @@
     <head>
         <title>Basketball - 2 Player</title>
         <script>
-            function character() {
+            function players() {
                 const canvas = document.getElementById('canvas');
-                const player1 = canvas.getContext('2d');
-                const player2 = canvas.getContext('2d');
+                const ctx = canvas.getContext('2d');
 
-                // create players
-                player1.beginPath();
-                player1.arc(100, 100, 20, 0, 2 * Math.PI);
-                player1.fillStyle = 'blue';
-                player1.fill();
-                player1.closePath();
-                const player1team = 'blue';
+                // Initial positions for both players
+                const player1 = { x: 100, y: 100, color: 'blue' };
+                const player2 = { x: 300, y: 100, color: 'red' };
+                const radius = 40;
 
-                player2.beginPath();
-                player2.arc(200, 100, 20, 0, 2 * Math.PI);
-                player2.fillStyle = 'red';
-                player2.fill();
-                player2.closePath();
-                const player2team = 'red';
+                // Draw both players
+                function drawPlayers() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    // Player 1
+                    ctx.beginPath();
+                    ctx.arc(player1.x, player1.y, radius, 0, 2 * Math.PI);
+                    ctx.fillStyle = player1.color;
+                    ctx.fill();
+                    // Player 2
+                    ctx.beginPath();
+                    ctx.arc(player2.x, player2.y, radius, 0, 2 * Math.PI);
+                    ctx.fillStyle = player2.color;
+                    ctx.fill();
+                }
 
-                // move players
+                // Handle key presses
+                document.addEventListener('keydown', function(event) {
+                    switch(event.key) {
+                        // Player 1 (WASD)
+                        case 'w':
+                        case 'W':
+                            player1.y -= 10;
+                            break;
+                        case 's':
+                        case 'S':
+                            player1.y += 10;
+                            break;
+                        case 'a':
+                        case 'A':
+                            player1.x -= 10;
+                            break;
+                        case 'd':
+                        case 'D':
+                            player1.x += 10;
+                            break;
+                        // Player 2 (Arrow keys)
+                        case 'ArrowUp':
+                            player2.y -= 10;
+                            break;
+                        case 'ArrowDown':
+                            player2.y += 10;
+                            break;
+                        case 'ArrowLeft':
+                            player2.x -= 10;
+                            break;
+                        case 'ArrowRight':
+                            player2.x += 10;
+                            break;
+                    }
+                    drawPlayers();
+                });
 
+                // Initial draw
+                drawPlayers();
             }
+
+            window.onload = players;
         </script>
     </head>
-    <body style="background-image: url(Basketball\ Court\(game\).png);">
-        <canvas id="canvas" width="100vh" height="100vh" style="background-color: transparent;">
-            <script>
-                character();
-            </script>
-        </canvas>
+    <body style="background-image: url('Basketball Court(game).png'); background-repeat: no-repeat; background-size: cover; align-self: center;">
+        <canvas id="canvas" style="max-width: 100%; max-height: 100%;" style="background-color: transparent;"></canvas>
     </body>
 </html>
