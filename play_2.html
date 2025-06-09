@@ -10,14 +10,14 @@
 
                 // create players
                 player1.beginPath();
-                player1.arc(100, 100, 20, 0, Math.PI * 2);
+                player1.arc(100, 100, 20, 0, 2 * Math.PI);
                 player1.fillStyle = 'blue';
                 player1.fill();
                 player1.closePath();
                 const player1team = 'blue';
 
                 player2.beginPath();
-                player2.arc(200, 100, 20, 0, Math.PI * 2);
+                player2.arc(200, 100, 20, 0, 2 * Math.PI);
                 player2.fillStyle = 'red';
                 player2.fill();
                 player2.closePath();
@@ -28,13 +28,11 @@
             }
         </script>
     </head>
-    <body>
-        <img src="Basketball Court(game).png" alt="Basketball Court" style="width: 100%; height: 100%;">
-            <canvas id="canvas" width="100vh" height="100vh">
-                <script>
-                    character();
-                </script>
-            </canvas>
-        </img>
+    <body style="background-image: url(Basketball\ Court\(game\).png);">
+        <canvas id="canvas" width="100vh" height="100vh" style="background-color: transparent;">
+            <script>
+                character();
+            </script>
+        </canvas>
     </body>
 </html>
