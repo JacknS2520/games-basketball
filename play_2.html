@@ -3,21 +3,19 @@
     <head>
         <title>Basketball - 2 Player</title>
         <script>
-            function style() {
-                const canvas = document.getElementById('canvas')
-
-                canvas.width = '100%'
-            }
             function players() {
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
 
                 // Initial positions for both players
-                const player1 = { x: 100, y: 100, color: 'blue' };
-                const player2 = { x: 300, y: 100, color: 'red' };
+                const player1 = { x: 400, y: 200, color: 'blue' };
+                const player2 = { x: 600, y: 300, color: 'red' };
                 const radius = 40;
 
-                // Draw both players
+                // Initialize ball
+                const ballObj = ballf(ctx, player1, player2, radius, drawPlayers);
+
+                // Draw both players and the ball
                 function drawPlayers() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     // Player 1
@@ -30,49 +28,49 @@
                     ctx.arc(player2.x, player2.y, radius, 0, 2 * Math.PI);
                     ctx.fillStyle = player2.color;
                     ctx.fill();
+                    // Draw the ball
+                    ballObj.updateBall();
+                    ballObj.drawBall();
                 }
 
-                // Handle key presses
+                // Set canvas to fill the window
+                function resizeCanvas() {
+                    canvas.width = window.innerWidth;
+                    canvas.height = window.innerHeight;
+                    drawPlayers();
+                }
+
                 document.addEventListener('keydown', function(event) {
+                    let moved = false;
                     switch(event.key) {
                         // Player 1 (WASD)
-                        case 'w':
-                        case 'W':
-                            player1.y -= 10;
-                            break;
-                        case 's':
-                        case 'S':
-                            player1.y += 10;
-                            break;
-                        case 'a':
-                        case 'A':
-                            player1.x -= 10;
-                            break;
-                        case 'd':
-                        case 'D':
-                            player1.x += 10;
-                            break;
+                        case 'w': case 'W':
+                            player1.y -= 10; moved = true; break;
+                        case 's': case 'S':
+                            player1.y += 10; moved = true; break;
+                        case 'a': case 'A':
+                            player1.x -= 10; moved = true; break;
+                        case 'd': case 'D':
+                            player1.x += 10; moved = true; break;
                         // Player 2 (Arrow keys)
                         case 'ArrowUp':
-                            player2.y -= 10;
-                            break;
+                            player2.y -= 10; moved = true; break;
                         case 'ArrowDown':
-                            player2.y += 10;
-                            break;
+                            player2.y += 10; moved = true; break;
                         case 'ArrowLeft':
-                            player2.x -= 10;
-                            break;
+                            player2.x -= 10; moved = true; break;
                         case 'ArrowRight':
-                            player2.x += 10;
-                            break;
+                            player2.x += 10; moved = true; break;
                     }
-                    drawPlayers();
+                    if (moved) drawPlayers();
                 });
 
-                // Initial draw
-                drawPlayers();
+                // Initial draw and resize
+                window.addEventListener('resize', resizeCanvas);
+                resizeCanvas();
             }
-            function ballf(ctx, player1, player2, radius) {
+
+            function ballf(ctx, player1, player2, radius, drawPlayers) {
                 // Ball state
                 let playerWBall = player1;
                 let ball = { x: player1.x + radius, y: player1.y };
@@ -81,6 +79,11 @@
                 // Load basketball image
                 const ballImg = new Image();
                 ballImg.src = "Basketball.png";
+                let ballImgLoaded = false;
+                ballImg.onload = function() {
+                    ballImgLoaded = true;
+                    drawPlayers();
+                };
 
                 // Update ball position to follow player
                 function updateBall() {
@@ -97,29 +100,118 @@
 
                 // Draw the ball as an image
                 function drawBall() {
-                    ctx.drawImage(ballImg, ball.x - 20, ball.y - 20, 40, 40);
+                    if (ballImgLoaded) {
+                        const ballSize = radius * 2 * 1.3; // Ball is 130% of player diameter
+                        ctx.drawImage(
+                            ballImg,
+                            ball.x - ballSize / 2,
+                            ball.y - ballSize / 2,
+                            ballSize,
+                            ballSize
+                        );
+                    }
                 }
 
                 // Ball shooting animation
                 function shoot() {
                     if (ballshot) return; // Prevent multiple shots at once
                     ballshot = true;
-                    let dy = -10;
+                    stopDribble();
+
+                    // Calculate basket targets (left and right)
+                    const basket1 = { x: 120, y: ctx.canvas.height / 2 }; // Left basket
+                    const basket2 = { x: ctx.canvas.width - 120, y: ctx.canvas.height / 2 }; // Right basket
+
+                    // Choose target based on who is shooting
+                    let target;
+                    let scoringPlayer;
+                    if (playerWBall === player1) {
+                        target = basket1;
+                        scoringPlayer = player1;
+                    } else {
+                        target = basket2;
+                        scoringPlayer = player2;
+                    }
+
+                    // Calculate direction vector
+                    const dx = target.x - ball.x;
+                    const dy = target.y - ball.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const speed = 18; // pixels per frame
+                    const vx = dx / dist * speed;
+                    const vy = dy / dist * speed;
+                    const player1Score = document.getElementById('player1Score');
+                    const player2Score = document.getElementById('player2Score');
+
                     let shootInterval = setInterval(function() {
-                        ball.y += dy;
-                        drawBall();
-                        if (ball.y < 0) {
+                        ball.x += vx;
+                        ball.y += vy;
+                        ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                        drawPlayers();
+
+                        // Stop when close to basket
+                        if (Math.abs(ball.x - target.x) < 20 && Math.abs(ball.y - target.y) < 20) {
                             clearInterval(shootInterval);
+                            // --- FIX: Score goes to the shooter, not the new owner ---
+                            if (scoringPlayer === player1) {
+                                player1Score.textContent = parseInt(player1Score.textContent) + 2;
+                                playerWBall = player2;
+                            } else {
+                                player2Score.textContent = parseInt(player2Score.textContent) + 2;
+                                playerWBall = player1;
+                            }
                             ballshot = false;
-                            playerWBall = (playerWBall === player1) ? player2 : player1;
                             updateBall();
+                            drawPlayers();
+                            startDribble(); // Resume dribbling after shot
                         }
                     }, 20);
                 }
 
+                // Dribble animation (continuous)
+                let dribbleInterval;
+                function startDribble() {
+                    stopDribble();
+                    if (ballshot) return;
+                    let originalY = ball.y;
+                    let dribbleHeight = 20;
+                    let dribbleSpeed = 4;
+                    let direction = 1;
+                    dribbleInterval = setInterval(function bounce() {
+                        if (ballshot) {
+                            clearInterval(dribbleInterval);
+                            dribbleInterval = null;
+                            ball.y = originalY;
+                            drawPlayers();
+                            return;
+                        }
+                        ball.y += dribbleSpeed * direction;
+                        drawPlayers();
+                        if (direction === 1 && ball.y >= originalY + dribbleHeight) {
+                            direction = -1;
+                        } else if (direction === -1 && ball.y <= originalY) {
+                            direction = 1;
+                        }
+                    }, 16);
+                }
+                function stopDribble() {
+                    if (dribbleInterval) {
+                        clearInterval(dribbleInterval);
+                        dribbleInterval = null;
+                    }
+                }
+
+                // Start dribbling by default
+                startDribble();
+
                 // Listen for Shift key to shoot
                 document.addEventListener('keydown', function(event) {
-                    if (!ballshot && (event.key === 'Shift' || event.key === 'ShiftLeft' || event.key === 'ShiftRight')) {
+                    // Player 1 shoots with Left Shift
+                    if (!ballshot && playerWBall === player1 && event.code === 'ShiftLeft') {
+                        shoot();
+                    }
+                    // Player 2 shoots with Right Shift
+                    if (!ballshot && playerWBall === player2 && event.code === 'ShiftRight') {
                         shoot();
                     }
                 });
@@ -129,18 +221,41 @@
                     ball,
                     updateBall,
                     drawBall,
-                    shoot
+                    shoot,
+                    startDribble
                 };
             }
             window.onbeforeunload = function() {
                 alert("Changes you made may not be saved.");
             };
 
-
             window.onload = players;
         </script>
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+            }
+            #canvas {
+                display: block;
+                width: 100vw;
+                height: 100vh;
+                background-color: transparent;
+            }
+        </style>
     </head>
-    <body style="background-image: url('Basketball\ Court\(main\).png'); background-repeat: no-repeat; background-size: cover; align-self: center;">
-        <canvas id="canvas" style="max-width: 100%; max-height: 100%;" style="background-color: transparent;"></canvas>
+    <body style="background-image: url('Basketball Court(main).png'); background-repeat: no-repeat; background-size: cover; align-self: center;">
+        <canvas id="canvas"></canvas>
+        <div id="scoreboard" style="position: absolute; top: 20px; left: 20px; color: white; font-family: Arial, sans-serif; width: 300px;">
+            <h1 style="color: rgb(255, 0, 0); text-align: center; margin: 0;">Bulls</h1>
+            <div style="display: flex; justify-content: space-between;">
+                <h1 style="color:white; text-align: left; margin: 0;">Guest</h1>
+                <h1 style="color:white; text-align: right; margin: 0;">Home</h1>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <h2 style="color:cyan; text-align: left; margin: 0;" id="player1Score">0</h2>
+                <h2 style="color:cyan; text-align: right; margin: 0;" id="player2Score">0</h2>
+            </div>
+        </div>
     </body>
 </html>
