@@ -28,8 +28,7 @@
                     ctx.arc(player2.x, player2.y, radius, 0, 2 * Math.PI);
                     ctx.fillStyle = player2.color;
                     ctx.fill();
-                    // Draw the ball
-                    ballObj.updateBall();
+                    // Draw the ball (do NOT call updateBall here)
                     ballObj.drawBall();
                 }
 
@@ -62,7 +61,11 @@
                         case 'ArrowRight':
                             player2.x += 10; moved = true; break;
                     }
-                    if (moved) drawPlayers();
+                    if (moved) {
+                        ballObj.updateBall();
+                        drawPlayers();
+                        ballObj.startDribble();
+                    }
                 });
 
                 // Initial draw and resize
@@ -89,10 +92,10 @@
                 function updateBall() {
                     if (!ballshot) {
                         if (playerWBall === player1) {
-                            ball.x = player1.x + radius;
+                            ball.x = player1.x - radius;
                             ball.y = player1.y;
                         } else {
-                            ball.x = player2.x - radius;
+                            ball.x = player2.x + radius;
                             ball.y = player2.y;
                         }
                     }
@@ -101,7 +104,7 @@
                 // Draw the ball as an image
                 function drawBall() {
                     if (ballImgLoaded) {
-                        const ballSize = radius * 2 * 1.3; // Ball is 130% of player diameter
+                        const ballSize = radius * 2 * 2.3; // Ball is 130% of player diameter
                         ctx.drawImage(
                             ballImg,
                             ball.x - ballSize / 2,
@@ -169,18 +172,20 @@
                 }
 
                 // Dribble animation (continuous)
-                let dribbleInterval;
+                let dribbleInterval = null;
+                let dribbleActive = false;
+
                 function startDribble() {
-                    stopDribble();
+                    stopDribble(); // Always clear any previous dribble
                     if (ballshot) return;
+                    dribbleActive = true;
                     let originalY = ball.y;
                     let dribbleHeight = 20;
                     let dribbleSpeed = 4;
                     let direction = 1;
                     dribbleInterval = setInterval(function bounce() {
                         if (ballshot) {
-                            clearInterval(dribbleInterval);
-                            dribbleInterval = null;
+                            stopDribble();
                             ball.y = originalY;
                             drawPlayers();
                             return;
@@ -194,11 +199,13 @@
                         }
                     }, 16);
                 }
+
                 function stopDribble() {
                     if (dribbleInterval) {
                         clearInterval(dribbleInterval);
                         dribbleInterval = null;
                     }
+                    dribbleActive = false;
                 }
 
                 // Start dribbling by default
