@@ -3,6 +3,11 @@
     <head>
         <title>Basketball - 2 Player</title>
         <script>
+            function style() {
+                const canvas = document.getElementById('canvas')
+
+                canvas.width = '100%'
+            }
             function players() {
                 const canvas = document.getElementById('canvas');
                 const ctx = canvas.getContext('2d');
@@ -67,11 +72,75 @@
                 // Initial draw
                 drawPlayers();
             }
+            function ballf(ctx, player1, player2, radius) {
+                // Ball state
+                let playerWBall = player1;
+                let ball = { x: player1.x + radius, y: player1.y };
+                let ballshot = false;
+
+                // Load basketball image
+                const ballImg = new Image();
+                ballImg.src = "Basketball.png";
+
+                // Update ball position to follow player
+                function updateBall() {
+                    if (!ballshot) {
+                        if (playerWBall === player1) {
+                            ball.x = player1.x + radius;
+                            ball.y = player1.y;
+                        } else {
+                            ball.x = player2.x - radius;
+                            ball.y = player2.y;
+                        }
+                    }
+                }
+
+                // Draw the ball as an image
+                function drawBall() {
+                    ctx.drawImage(ballImg, ball.x - 20, ball.y - 20, 40, 40);
+                }
+
+                // Ball shooting animation
+                function shoot() {
+                    if (ballshot) return; // Prevent multiple shots at once
+                    ballshot = true;
+                    let dy = -10;
+                    let shootInterval = setInterval(function() {
+                        ball.y += dy;
+                        drawBall();
+                        if (ball.y < 0) {
+                            clearInterval(shootInterval);
+                            ballshot = false;
+                            playerWBall = (playerWBall === player1) ? player2 : player1;
+                            updateBall();
+                        }
+                    }, 20);
+                }
+
+                // Listen for Shift key to shoot
+                document.addEventListener('keydown', function(event) {
+                    if (!ballshot && (event.key === 'Shift' || event.key === 'ShiftLeft' || event.key === 'ShiftRight')) {
+                        shoot();
+                    }
+                });
+
+                // Public API for ball
+                return {
+                    ball,
+                    updateBall,
+                    drawBall,
+                    shoot
+                };
+            }
+            window.onbeforeunload = function() {
+                alert("Changes you made may not be saved.");
+            };
+
 
             window.onload = players;
         </script>
     </head>
-    <body style="background-image: url('Basketball Court(game).png'); background-repeat: no-repeat; background-size: cover; align-self: center;">
+    <body style="background-image: url('Basketball\ Court\(main\).png'); background-repeat: no-repeat; background-size: cover; align-self: center;">
         <canvas id="canvas" style="max-width: 100%; max-height: 100%;" style="background-color: transparent;"></canvas>
     </body>
 </html>
