@@ -3,23 +3,17 @@
     <head>
         <title>Basketball - 2 Player</title>
         <script>
-            // All logic in one scope, sharing state
-            window.onload = function() {
-                // --- Setup ---
+            function players() {
                 const canvas = document.getElementById('canvas');
-                canvas.width = 800;
-                canvas.height = 500;
                 const ctx = canvas.getContext('2d');
-                const radius = 40;
-                const ballRadius = 20;
+
+                // Initial positions for both players
                 const player1 = { x: 100, y: 100, color: 'blue' };
                 const player2 = { x: 300, y: 100, color: 'red' };
-                let playerWBall = "player1";
-                let ballshot = false;
-                let ball = { x: player1.x + radius, y: player1.y, radius: ballRadius };
+                const radius = 40;
 
-                // --- Drawing ---
-                function draw() {
+                // Draw both players
+                function drawPlayers() {
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
                     // Player 1
                     ctx.beginPath();
@@ -31,111 +25,53 @@
                     ctx.arc(player2.x, player2.y, radius, 0, 2 * Math.PI);
                     ctx.fillStyle = player2.color;
                     ctx.fill();
-                    // Ball
-                    ctx.beginPath();
-                    ctx.arc(ball.x, ball.y, ball.radius, 0, 2 * Math.PI);
-                    ctx.fillStyle = 'orange';
-                    ctx.fill();
                 }
 
-                // --- Ball follows player with ball unless shot ---
-                function updateBall() {
-                    if (!ballshot) {
-                        if (playerWBall === "player1") {
-                            ball.x = player1.x + radius;
-                            ball.y = player1.y;
-                        } else {
-                            ball.x = player2.x - radius;
-                            ball.y = player2.y;
-                        }
-                    }
-                }
-
-                // --- Handle key presses for movement and ball shooting ---
+                // Handle key presses
                 document.addEventListener('keydown', function(event) {
-                    let moved = false;
                     switch(event.key) {
                         // Player 1 (WASD)
-                        case 'w': case 'W':
-                            player1.y -= 10; moved = true; break;
-                        case 's': case 'S':
-                            player1.y += 10; moved = true; break;
-                        case 'a': case 'A':
-                            player1.x -= 10; moved = true; break;
-                        case 'd': case 'D':
-                            player1.x += 10; moved = true; break;
+                        case 'w':
+                        case 'W':
+                            player1.y -= 10;
+                            break;
+                        case 's':
+                        case 'S':
+                            player1.y += 10;
+                            break;
+                        case 'a':
+                        case 'A':
+                            player1.x -= 10;
+                            break;
+                        case 'd':
+                        case 'D':
+                            player1.x += 10;
+                            break;
                         // Player 2 (Arrow keys)
                         case 'ArrowUp':
-                            player2.y -= 10; moved = true; break;
+                            player2.y -= 10;
+                            break;
                         case 'ArrowDown':
-                            player2.y += 10; moved = true; break;
+                            player2.y += 10;
+                            break;
                         case 'ArrowLeft':
-                            player2.x -= 10; moved = true; break;
+                            player2.x -= 10;
+                            break;
                         case 'ArrowRight':
-                            player2.x += 10; moved = true; break;
-                        // Ball shot controls
-                        case 'Shift':
-                            if (!ballshot) {
-                                ballshot = true;
-                                shoot();
-                            }
+                            player2.x += 10;
                             break;
                     }
-                    if (moved) {
-                        clampPlayers();
-                        updateBall();
-                        draw();
-                    }
+                    drawPlayers();
                 });
 
-                // --- Ball shooting animation ---
-                function shoot() {
-                    let dy = -10;
-                    let shootInterval = setInterval(function() {
-                        ball.y += dy;
-                        draw();
-                        if (ball.y < 0) {
-                            clearInterval(shootInterval);
-                            ballshot = false;
-                            playerWBall = (playerWBall === "player1") ? "player2" : "player1";
-                            updateBall();
-                            draw();
-                        }
-                    }, 20);
-                }
+                // Initial draw
+                drawPlayers();
+            }
 
-                // --- Responsive canvas (optional) ---
-                // Uncomment below if you want the canvas to resize with the window
-                /*
-                function resizeCanvas() {
-                    canvas.width = window.innerWidth;
-                    canvas.height = window.innerHeight;
-                    clampPlayers();
-                    updateBall();
-                    draw();
-                }
-                window.addEventListener('resize', resizeCanvas);
-                */
-
-                // --- Initial draw ---
-                updateBall();
-                draw();
-            };
+            window.onload = players;
         </script>
-        <style>
-            body {
-                margin: 0;
-                overflow: hidden;
-            }
-            #canvas {
-                display: block;
-                position: absolute;
-                top: 0;
-                left: 0;
-            }
-        </style>
     </head>
-    <body style="background-image: url('Basketball Court(game).png'); background-repeat: no-repeat; background-size: cover;">
-        <canvas id="canvas"></canvas>
+    <body style="background-image: url('Basketball Court(game).png'); background-repeat: no-repeat; background-size: cover; align-self: center;">
+        <canvas id="canvas" style="max-width: 100%; max-height: 100%;" style="background-color: transparent;"></canvas>
     </body>
 </html>
