@@ -181,7 +181,7 @@
                     dribbleActive = true;
                     let originalY = ball.y;
                     let dribbleHeight = 20;
-                    let dribbleSpeed = 4;
+                    let dribbleSpeed = 2; // <--- Make this smaller for slower dribble (was 4)
                     let direction = 1;
                     dribbleInterval = setInterval(function bounce() {
                         if (ballshot) {
