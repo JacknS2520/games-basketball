@@ -12,6 +12,17 @@
                 const player2 = { x: 600, y: 300, color: 'red' };
                 const radius = 40;
 
+                // Track which keys are currently pressed
+                const keysDown = {};
+
+                document.addEventListener('keydown', function(event) {
+                    keysDown[event.key] = true;
+                });
+
+                document.addEventListener('keyup', function(event) {
+                    keysDown[event.key] = false;
+                });
+
                 // Initialize ball
                 const ballObj = ballf(ctx, player1, player2, radius, drawPlayers);
 
@@ -39,58 +50,41 @@
                     drawPlayers();
                 }
 
-                document.addEventListener('keydown', function(event) {
+                // Replace your movement logic with this interval:
+                setInterval(function() {
                     let moved = false;
-                    switch(event.key) {
-                        // Player 1 (WASD)
-                        case 'w': case 'W':
-                            player1.y -= 10; moved = true; break;
-                        case 's': case 'S':
-                            player1.y += 10; moved = true; break;
-                        case 'a': case 'A':
-                            player1.x -= 10; moved = true; break;
-                        case 'd': case 'D':
-                            player1.x += 10; moved = true; break;
-                        // Player 2 (Arrow keys)
-                        case 'ArrowUp':
-                            player2.y -= 10; moved = true; break;
-                        case 'ArrowDown':
-                            player2.y += 10; moved = true; break;
-                        case 'ArrowLeft':
-                            player2.x -= 10; moved = true; break;
-                        case 'ArrowRight':
-                            player2.x += 10; moved = true; break;
-                    }
+
+                    // Player 1 (WASD)
+                    if (keysDown['w'] || keysDown['W']) { player1.y -= 10; moved = true; }
+                    if (keysDown['s'] || keysDown['S']) { player1.y += 10; moved = true; }
+                    if (keysDown['a'] || keysDown['A']) { player1.x -= 10; moved = true; }
+                    if (keysDown['d'] || keysDown['D']) { player1.x += 10; moved = true; }
+
+                    // Player 2 (Arrow keys)
+                    if (keysDown['ArrowUp'])    { player2.y -= 10; moved = true; }
+                    if (keysDown['ArrowDown'])  { player2.y += 10; moved = true; }
+                    if (keysDown['ArrowLeft'])  { player2.x -= 10; moved = true; }
+                    if (keysDown['ArrowRight']) { player2.x += 10; moved = true; }
+
                     if (moved) {
                         // Prevent players from overlapping
                         if (checkCollision()) {
                             // Undo the move by reversing the last action
-                            switch(event.key) {
-                                // Player 1 (WASD)
-                                case 'w': case 'W':
-                                    player1.y += 10; break;
-                                case 's': case 'S':
-                                    player1.y -= 10; break;
-                                case 'a': case 'A':
-                                    player1.x += 10; break;
-                                case 'd': case 'D':
-                                    player1.x -= 10; break;
-                                // Player 2 (Arrow keys)
-                                case 'ArrowUp':
-                                    player2.y += 10; break;
-                                case 'ArrowDown':
-                                    player2.y -= 10; break;
-                                case 'ArrowLeft':
-                                    player2.x += 10; break;
-                                case 'ArrowRight':
-                                    player2.x -= 10; break;
-                            }
+                            if (keysDown['w'] || keysDown['W']) { player1.y += 10; }
+                            if (keysDown['s'] || keysDown['S']) { player1.y -= 10; }
+                            if (keysDown['a'] || keysDown['A']) { player1.x += 10; }
+                            if (keysDown['d'] || keysDown['D']) { player1.x -= 10; }
+                            if (keysDown['ArrowUp'])    { player2.y += 10; }
+                            if (keysDown['ArrowDown'])  { player2.y -= 10; }
+                            if (keysDown['ArrowLeft'])  { player2.x += 10; }
+                            if (keysDown['ArrowRight']) { player2.x -= 10; }
                         }
                         ballObj.updateBall();
                         drawPlayers();
                         ballObj.startDribble();
+                        maybeShowShotBar(); // <--- ADD THIS LINE HERE!
                     }
-                });
+                }, 40); // Adjust interval for movement speed
 
                 // Initial draw and resize
                 window.addEventListener('resize', resizeCanvas);
@@ -103,6 +97,18 @@
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     // If distance is less than sum of radii, collision!
                     return distance < radius * 2;
+                }
+                if (playerWBall.x < 0 || playerWBall.x > canvas.width ||
+                    playerWBall.y < 0 || playerWBall.y > canvas.height) {
+                    if (playerWBall === player1) {
+                        playerWBall = player2;
+                    } else {
+                        playerWBall = player1;
+                        player1.x = 400; // Reset player1 position
+                        player2.x = 600; // Reset player2 position
+                        player1.y = originalY
+                        player2.y = originalY
+                    }
                 }
             }
 
@@ -148,6 +154,65 @@
                     }
                 }
 
+                // 3-point line distance (adjust as needed for your court)
+                const threePointDistance = 300; // Example distance in pixels
+
+                // Add these at the top of ballf
+                const shotBarContainer = document.getElementById('shotBarContainer');
+                const shotBarFill = document.getElementById('shotBarFill');
+                const shotBarWhite = document.getElementById('shotBarWhite');
+                let shotBarActive = false;
+
+                // Helper to get basket for current shooter
+                function getShooterBasket() {
+                    return (playerWBall === player1)
+                        ? { x: 120, y: ctx.canvas.height / 2 }
+                        : { x: ctx.canvas.width - 120, y: ctx.canvas.height / 2 };
+                }
+
+                let shotBarInterval = null;
+                let shotBarValue = 0; // 0 to 100
+
+                function startShotBar() {
+                    shotBarValue = 0;
+                    shotBarFill.style.width = '0%';
+                    shotBarInterval = setInterval(() => {
+                        shotBarValue += 2; // speed of fill
+                        if (shotBarValue > 100) shotBarValue = 0; // loop
+                        shotBarFill.style.width = shotBarValue + '%';
+                    }, 16);
+                }
+
+                function stopShotBar() {
+                    if (shotBarInterval) {
+                        clearInterval(shotBarInterval);
+                        shotBarInterval = null;
+                    }
+                }
+
+                // Show/hide shot bar if player is > 100px from basket
+                function maybeShowShotBar() {
+                    const shooter = playerWBall;
+                    const basket = getShooterBasket();
+                    const dist = Math.sqrt(
+                        Math.pow(shooter.x - basket.x, 2) +
+                        Math.pow(shooter.y - basket.y, 2)
+                    );
+                    // Only show the bar if the player with the ball is more than 100px from the basket
+                    if (dist > 100) {
+                        shotBarContainer.style.display = 'block';
+                        shotBarActive = true;
+                        // Position the white zone (50%-75%)
+                        shotBarWhite.style.left = '50%';
+                        shotBarWhite.style.width = '25%';
+                        startShotBar();
+                    } else {
+                        shotBarContainer.style.display = 'none';
+                        shotBarActive = false;
+                        stopShotBar();
+                    }
+                }
+
                 // Ball shooting animation
                 function shoot() {
                     if (ballshot) return; // Prevent multiple shots at once
@@ -174,7 +239,9 @@
 
                     // --- Add random miss logic ---
                     // 80% chance to hit, 20% chance to miss
-                    const willScore = Math.random() < 0.5;
+                    const inWhite = shotBarValue >= 50 && shotBarValue <= 75;
+                    const willScore = inWhite ? Math.random() < 0.9 : Math.random() < 0.2;
+
                     // If miss, offset the target by a random amount
                     if (!willScore) {
                         target = {
@@ -192,9 +259,6 @@
                     const vy = dy / dist * speed;
                     const player1Score = document.getElementById('player1Score');
                     const player2Score = document.getElementById('player2Score');
-
-                    // 3-point line distance (adjust as needed for your court)
-                    const threePointDistance = 250;
 
                     let shootInterval = setInterval(function() {
                         ball.x += vx;
@@ -214,6 +278,7 @@
                                     Math.pow(shooter.x - basket.x, 2) +
                                     Math.pow(shooter.y - basket.y, 2)
                                 );
+                                // Only award 3 points if shooter is OUTSIDE the 3-point line
                                 let points = shooterDist > threePointDistance ? 3 : 2;
 
                                 if (scoringPlayer === player1) {
@@ -265,19 +330,9 @@
                                 const dy2 = ball.y - player2.y;
                                 const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
 
-                                if (dist1 < radius) {
-                                    playerWBall = player1;
-                                    updateBall();
-                                    drawPlayers();
-                                    startDribble();
-                                    document.removeEventListener('keydown', pickupListener);
-                                } else if (dist2 < radius) {
-                                    playerWBall = player2;
-                                    updateBall();
-                                    drawPlayers();
-                                    startDribble();
-                                    document.removeEventListener('keydown', pickupListener);
-                                }
+                                stopDribble();
+                                ball.moveing = false;
+                                
                             }
 
                             // Listener for player movement to check for rebound pickup
@@ -371,6 +426,11 @@
                 height: 100vh;
                 background-color: transparent;
             }
+            .bar {
+                background-color: black;
+                color: green;
+                
+            }
         </style>
     </head>
     <body style="background-image: url('Basketball Court(main).png'); background-repeat: no-repeat; background-size: cover; align-self: center;">
@@ -384,6 +444,13 @@
             <div style="display: flex; justify-content: space-between;">
                 <h2 style="color:cyan; text-align: left; margin: 0;" id="player1Score">0</h2>
                 <h2 style="color:cyan; text-align: right; margin: 0;" id="player2Score">0</h2>
+            </div>
+        </div>
+        <!-- Add this inside your <body> just after the scoreboard div -->
+        <div id="shotBarContainer" style="position:absolute; left:50%; top:80%; transform:translate(-50%,0); width:300px; height:30px; display:none; z-index:10;">
+            <div id="shotBar" class="bar" style="width:100%; height:100%; position:relative; border-radius:8px; background:black;">
+                <div id="shotBarWhite" style="position:absolute; left:50%; width:25%; height:100%; background:white; opacity:0.8;"></div>
+                <div id="shotBarFill" style="position:absolute; left:0; top:0; height:100%; background:green; width:0%; border-radius:8px;"></div>
             </div>
         </div>
     </body>
